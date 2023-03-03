@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cron-service-account
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modify-pods
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - deployments/scale
+    verbs:
+      - list
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: modify-pods-to-sa
+subjects:
+  - kind: ServiceAccount
+    name: cron-service-account
+roleRef:
+  kind: Role
+  name: modify-pods
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-scale-down-integrations
+spec:
+  schedule: "30 20 * * *"  # UTC TIME
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure # Needs to be OnFailure or Never
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            imagePullPolicy: IfNotPresent
+            args:
+              - scale
+              - deployment
+              - -l
+              - type=integration
+              - --replicas=0
+          serviceAccountName: cron-service-account
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-scale-up-integrations
+spec:
+  schedule: "30 5 * * *"  # UTC TIME
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure # Needs to be OnFailure or Never
+          containers:
+          - name: kubectl
+            image: bitnami/kubectl:latest
+            imagePullPolicy: IfNotPresent
+            args:
+              - scale
+              - deployment
+              - -l
+              - type=integration
+              - --replicas=1
+          serviceAccountName: cron-service-account
+

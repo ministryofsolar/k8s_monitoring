@@ -1,0 +1,85 @@
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: monitoring-service
+#  labels:
+#    app: monitoring
+#spec:
+#  clusterIP: 10.0.21.22
+#  selector:
+#    app: monitoring
+#  ports:
+#  - port: 8000
+#    targetPort: 8000
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: monitoring
+#  labels:
+#    app: monitoring
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: monitoring
+#  template:
+#    metadata:
+#      labels:
+#        app: monitoring
+#    spec:
+#      nodeSelector:
+#        "kubernetes.io/os": linux
+#      containers:
+#      - name: ms-monitoring
+#        image: acrintegrations.azurecr.io/monitoring:latest
+#        ports:
+#          - containerPort: 8000 # purely informational
+#        env:
+#        - name: POSTGRES_PASSWORD
+#          value: "xLwE1JIEgPe2k#Jy"
+#        - name: POSTGRES_NAME
+#          value: "postgres"
+#        - name: POSTGRES_USER
+#          value: "postgres"
+#        - name: POSTGRES_HOST
+#          value: "db-monitoring.postgres.database.azure.com"
+#        - name: SECRET_KEY
+#          value: "-t5*6n5_)#08ritp*z$+fc_9gv^@k0r*6$ffpwgv_yz_4u1)6f"
+#---
+#apiVersion: secrets-store.csi.x-k8s.io/v1
+#kind: SecretProviderClass
+#metadata:
+#  name: azure-sync
+#spec:
+#  provider: azure
+#  secretObjects:                              # [OPTIONAL] SecretObjects defines the desired state of synced Kubernetes secret objects
+#  - data:
+#    - key: username                           # data field to populate
+#      objectName: foo1                        # name of the mounted content to sync; this could be the object name or the object alias
+#    secretName: foosecret                     # name of the Kubernetes secret object
+#    type: Opaque                              # type of Kubernetes secret object (for example, Opaque, kubernetes.io/tls)
+
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: fimer-retain
+#provisioner: disk.csi.azure.com
+#parameters:
+#  skuName: StandardSSD_LRS
+#reclaimPolicy: Retain
+#volumeBindingMode: WaitForFirstConsumer
+#allowVolumeExpansion: true
+-
+#      - name: ms-integration-synaptiq-api
+#        image: acrintegrations.azurecr.io/synaptiq:latest
+#      - name: ms-integration-sma-api
+#        image: acrintegrations.azurecr.io/sma:latest
+#      - name: ms-integration-solaredge-api
+#        image: acrintegrations.azurecr.io/solaredge:latest
+#      - name: ms-integration-neteco-2-api
+#        image: acrintegrations.azurecr.io/neteco:latest
+#      - name: ms-integration-neteco-3-api
+#        image: acrintegrations.azurecr.io/neteco:latest
+#      - name: ms-integration-fronius-api
+#        image: acrintegrations.azurecr.io/fronius:latest
